@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  tailwind.config = {
+    darkMode: 'class', // ← 关键
+    theme: { extend: { colors: { primary: '#556B2F', secondary: '#8FBC8F', accent: '#2E8B57', neutral: '#F5F7F0', 'neutral-dark': '#E8EAE0', success: '#4CAF50', danger: '#B71C1C', warning: '#FF8F00', } } }
+  }
+</script>
+    <title>OTIA MUN Meeting Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Configure Tailwind with olive green theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#556B2F', // Olive green primary
+                        secondary: '#8FBC8F', // Light olive
+                        accent: '#2E8B57', // Dark olive
+                        neutral: '#F5F7F0', // Light gray-green background
+                        'neutral-dark': '#E8EAE0', // Slightly darker gray-green
+                        success: '#4CAF50', // Green for success
+                        danger: '#B71C1C', // Dark red
+                        warning: '#FF8F00', // Orange for warning
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .animate-fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .bg-text-pattern {
+                position: relative;
+            }
+            .bg-text-pattern::before {
+                content: "OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                font-size: 36px;
+                font-weight: bold;
+                color: rgba(85, 107, 47, 0.15);
+                z-index: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                pointer-events: none;
+                line-height: 2.2;
+                transform: rotate(-2deg);
+                letter-spacing: 2px;
+            }
+            @media (max-width: 768px) {
+                .bg-text-pattern::before {
+                    font-size: 26px;
+                    line-height: 2.5;
+                    transform: rotate(-1.5deg);
+                }
+            }
+        }/* === OTIA 平行水印 80% 不透明 === */
+.otia-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;user-select:none;background:#f5f7f0;}
+.otia-bg span{position:absolute;left:0;right:0;height:1.2em;line-height:1.2em;font-weight:900;font-size:clamp(70px,10vw,140px);color:var(--theme-otia);opacity:0.8;white-space:nowrap;letter-spacing:.15em;transform:rotate(0deg);}
+.otia-bg span:nth-child(1){top:10%}.otia-bg span:nth-child(2){top:30%}.otia-bg span:nth-child(3){top:50%}.otia-bg span:nth-child(4){top:70%}.otia-bg span:nth-child(5){top:90%;}
+:root{
+  --theme-bg:#f5f7f0;   /* 页面背景 */
+  --theme-otia:#556B2F; /* OTIA 水印色 */
+}
+body{background:var(--theme-bg);}
+/* 深色变量覆盖 */
+.dark body { background:#111827; color:#e5e7eb; }
+.dark header { background:#1f2937/70; }
+.dark .bg-white { background:#1f2937 !important; }
+.dark .text-gray-800 { color:#e5e7eb !important; }
+.dark .border-gray-300 { border-color:#4b5563 !important; }
+.dark .card-shadow { box-shadow:0 4px 20px rgba(0,0,0,0.4) !important; }
+/* 深色模式文字高亮 */
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800 { color: #f9fafb !important; }   /* 近乎白 */
+
+.dark .text-gray-400 { color: #d1d5db !important; }   /* 亮灰点缀 */
+    </style>
+</head>
+<body class="bg-neutral min-h-screen font-sans text-gray-800 bg-text-pattern">
+<button id="dark-toggle" class="fixed bottom-5 right-5 w-12 h-12 rounded-full bg-gray-800/80 text-yellow-300 backdrop-blur-xl shadow-lg z-40 cursor-pointer">
+  <i class="fa fa-moon-o"></i>
+</button>
+<div class="otia-bg" id="otiaBg">
+<span>OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA</span>
+<span>OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA</span>
+<span>OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA</span>
+<span>OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA</span>
+<span>OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA OTIA</span>
+</div>
+    <!-- Header Navigation -->
+    <header class="bg-white/70 backdrop-blur-xl shadow-sm fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-globe text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-primary">OTIA MUN Meeting Manager</h1>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-6">
+                <button id="nav-home" class="nav-btn flex items-center space-x-1 text-primary border-b-2 border-primary px-1 py-5">
+                    <i class="fa fa-home"></i>
+                    <span>Home</span>
+                </button>
+                <button id="nav-rollcall" class="nav-btn flex items-center space-x-1 text-gray-600 hover:text-primary px-1 py-5 transition-colors">
+                    <i class="fa fa-list-alt"></i>
+                    <span>Roll Call</span>
+                </button>
+                <button id="nav-motions" class="nav-btn flex items-center space-x-1 text-gray-600 hover:text-primary px-1 py-5 transition-colors">
+                    <i class="fa fa-gavel"></i>
+                    <span>Motions</span>
+                </button>
+                <button id="nav-voting" class="nav-btn flex items-center space-x-1 text-gray-600 hover:text-primary px-1 py-5 transition-colors">
+                    <i class="fa fa-check-square-o"></i>
+                    <span>Voting</span>
+                </button>
+                <button id="nav-settings" class="nav-btn flex items-center space-x-1 text-gray-600 hover:text-primary px-1 py-5 transition-colors">
+                    <i class="fa fa-cog"></i>
+                    <span>Settings</span>
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button id="import-meeting-btn" class="flex items-center space-x-1 text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded">
+                    <i class="fa fa-upload"></i>
+                    <span class="hidden md:inline">Import</span>
+                </button>
+                <button id="save-meeting-btn" class="flex items-center space-x-1 text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded">
+                    <i class="fa fa-save"></i>
+                    <span class="hidden md:inline">Save</span>
+                </button>
+                <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-primary">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t animate-fade-in">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+                <button id="mobile-home" class="flex items-center space-x-2 text-primary px-2 py-3">
+                    <i class="fa fa-home w-6"></i>
+                    <span>Home</span>
+                </button>
+                <button id="mobile-rollcall" class="flex items-center space-x-2 text-gray-600 hover:text-primary px-2 py-3 transition-colors">
+                    <i class="fa fa-list-alt w-6"></i>
+                    <span>Roll Call</span>
+                </button>
+                <button id="mobile-motions" class="flex items-center space-x-2 text-gray-600 hover:text-primary px-2 py-3 transition-colors">
+                    <i class="fa fa-gavel w-6"></i>
+                    <span>Motions</span>
+                </button>
+                <button id="mobile-voting" class="flex items-center space-x-2 text-gray-600 hover:text-primary px-2 py-3 transition-colors">
+                    <i class="fa fa-check-square-o w-6"></i>
+                    <span>Voting</span>
+                </button>
+                <button id="mobile-settings" class="flex items-center space-x-2 text-gray-600 hover:text-primary px-2 py-3 transition-colors">
+                    <i class="fa fa-cog w-6"></i>
+                    <span>Settings</span>
+                </button>
+                <button id="mobile-import" class="flex items-center space-x-2 text-primary px-2 py-3">
+                    <i class="fa fa-upload w-6"></i>
+                    <span>Import Meeting</span>
+                </button>
+                <button id="mobile-save" class="flex items-center space-x-2 text-primary px-2 py-3">
+                    <i class="fa fa-save w-6"></i>
+                    <span>Save Meeting</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pt-24 pb-16 relative z-10">
+        <!-- Home View -->
+        <section id="home-view" class="view-section">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Meeting Status Card -->
+                <div class="bg-white rounded-xl p-6 card-shadow transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-lg font-semibold">Meeting Status</h2>
+                        <span id="meeting-status-badge" class="px-3 py-1 bg-warning/10 text-warning rounded-full text-sm font-medium">Not Started</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Committee</span>
+                            <span id="current-committee" class="font-medium">Not Set</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Current Topic</span>
+                            <span id="current-topic" class="font-medium">Not Set</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Speakers List</span>
+                            <span id="speakers-count" class="font-medium">0</span> / <span id="speakers-total">0</span> people
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Current Speaker</span>
+                            <span id="current-speaker" class="font-medium">None</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Remaining Time</span>
+                            <span id="speech-time" class="font-medium">00:00</span>
+                        </div>
+<!-- 新增：当前发言人下拉 -->
+<div class="flex justify-between items-center mt-3">
+    <span class="text-gray-600">Current Speaker</span>
+<input id="current-speaker-input" type="text" class="text-sm border border-gray-300 rounded px-2 py-1 w-48" placeholder="Country - Name">
+    </select>
+</div>
+                    </div>
+                    
+                    <div class="mt-6">
+<div class="flex items-center justify-between mb-2">
+  <span class="text-sm text-gray-600">Speakers List</span>
+  <button id="clear-speakers-btn" class="text-xs text-danger hover:underline">Clear All</button>
+</div>
+                        <button id="start-meeting-btn" class="w-full py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center">
+                            <i class="fa fa-play mr-2"></i> Start Meeting
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Attendance Statistics Card -->
+                <div class="bg-white rounded-xl p-6 card-shadow transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-lg font-semibold">Attendance</h2>
+                        <i class="fa fa-users text-primary text-xl"></i>
+                    </div>
+                    
+                    <div class="flex justify-center mb-6">
+                        <canvas id="attendance-chart" width="200" height="200"></canvas>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-neutral p-3 rounded-lg">
+                            <div id="total-delegates" class="text-2xl font-bold text-primary">0</div>
+                            <div class="text-sm text-gray-600">Total</div>
+                        </div>
+                        <div class="bg-neutral p-3 rounded-lg">
+                            <div id="present-count" class="text-2xl font-bold text-success">0</div>
+                            <div class="text-sm text-gray-600">Present</div>
+                        </div>
+                        <div class="bg-neutral p-3 rounded-lg">
+                            <div id="absent-count" class="text-2xl font-bold text-danger">0</div>
+                            <div class="text-sm text-gray-600">Absent</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Motions and Voting Statistics Card -->
+                <div class="bg-white rounded-xl p-6 card-shadow transition-transform hover:scale-[1.02]">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-lg font-semibold">Meeting Data</h2>
+                        <i class="fa fa-bar-chart text-primary text-xl"></i>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-600">Motions Proposed</span>
+                                <span id="motions-count" class="text-sm font-medium">0</span>
+                            </div>
+                            <div class="w-full bg-neutral-dark rounded-full h-2.5">
+                                <div id="motions-progress" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-600">Votes Conducted</span>
+                                <span id="votes-count" class="text-sm font-medium">0</span>
+                            </div>
+                            <div class="w-full bg-neutral-dark rounded-full h-2.5">
+                                <div id="votes-progress" class="bg-accent h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-600">Motions Passed</span>
+                                <span id="passed-motions" class="text-sm font-medium">0</span>
+                            </div>
+                            <div class="w-full bg-neutral-dark rounded-full h-2.5">
+                                <div id="passed-progress" class="bg-success h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <button id="configure-meeting-btn" class="w-full py-2.5 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors flex items-center justify-center">
+                            <i class="fa fa-cog mr-2"></i> Meeting Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl p-6 card-shadow mb-8">
+                <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button id="quick-rollcall" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-list-alt text-2xl mb-2"></i>
+                        <span>Start Roll Call</span>
+                    </button>
+                    <button id="quick-add-motion" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-plus-circle text-2xl mb-2"></i>
+                        <span>Add Motion</span>
+                    </button>
+                    <button id="quick-start-vote" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-check-square-o text-2xl mb-2"></i>
+                        <span>Start Voting</span>
+                    </button>
+                    <button id="quick-manage-delegates" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-primary hover:text-primary transition-colors">
+                        <i class="fa fa-user-plus text-2xl mb-2"></i>
+                        <span>Manage Delegates</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Recent Activity</h2>
+                    <button class="text-primary text-sm hover:underline">View All</button>
+                </div>
+                
+                <div id="activity-feed" class="space-y-4 max-h-64 overflow-y-auto scrollbar-hide">
+                    <div class="text-center text-gray-500 py-8">
+                        Meeting activities will appear here
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Roll Call View -->
+        <section id="rollcall-view" class="view-section hidden">
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold mb-4 md:mb-0">Delegate Roll Call</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <div class="relative">
+                            <input type="text" id="delegate-search" placeholder="Search delegate or country..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full md:w-64">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <button id="add-delegate-btn" class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-plus"></i>
+                            <span>Add Delegate</span>
+                        </button>
+                        <button id="clear-all-delegates" class="flex items-center space-x-2 px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                            <i class="fa fa-trash"></i>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tl-lg">No.</th>
+                                <th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                                <th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delegate Name</th>
+                                <th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+<th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Speaker</th>
+<th class="px-4 py-3 bg-neutral text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="delegates-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Delegate data will be added dynamically via JavaScript -->
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                    No delegate data available. Click "Add Delegate" to add.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-6 flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-gray-600 mb-4 md:mb-0">
+                        Total <span id="table-delegates-count" class="font-medium">0</span> delegates, with <span id="table-present-count" class="font-medium text-success">0</span> present and <span id="table-absent-count" class="font-medium text-danger">0</span> absent
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="mark-all-present" class="px-4 py-2 border border-success text-success rounded-lg hover:bg-success/5 transition-colors">
+                            Mark All Present
+                        </button>
+                        <button id="mark-all-absent" class="px-4 py-2 border border-danger text-danger rounded-lg hover:bg-danger/5 transition-colors">
+                            Mark All Absent
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Roll Call Operations -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h2 class="text-lg font-semibold mb-4">Roll Call Operations</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-md font-medium mb-3">Start Roll Call</h3>
+                        <p class="text-gray-600 text-sm mb-4">Proceed through the delegate list in order to record attendance</p>
+                        <button id="start-rollcall-btn" class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center">
+                            <i class="fa fa-play mr-2"></i> Start Roll Call Process
+                        </button>
+                    </div>
+                    <div>
+                        <h3 class="text-md font-medium mb-3">Bulk Import Delegates</h3>
+                        <p class="text-gray-600 text-sm mb-4">Import multiple delegates. Use format: "Country DelegateName" (one per line, separated by space)</p>
+                        <div class="flex">
+                            <textarea id="bulk-delegates" placeholder="Example:
+China Zhang San
+USA John Doe
+UK John Smith" class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none h-32"></textarea>
+                            <button id="import-delegates" class="px-4 py-2 bg-primary text-white rounded-r-lg hover:bg-primary/90 transition-colors">
+                                Import
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Motions View -->
+        <section id="motions-view" class="view-section hidden">
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold mb-4 md:mb-0">Meeting Motions</h2>
+                    <div class="flex gap-3">
+                        <button id="new-motion-btn" class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-plus"></i>
+                            <span>Propose New Motion</span>
+                        </button>
+                        <button id="clear-all-motions" class="flex items-center space-x-2 px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                            <i class="fa fa-trash"></i>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4" id="motions-list">
+                    <!-- Motion data will be added dynamically via JavaScript -->
+                    <div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-gavel text-4xl text-gray-300 mb-3"></i>
+                        <p>No motion records</p>
+                        <p class="text-sm text-gray-400 mt-1">Click "Propose New Motion" to add meeting motions</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Motion Statistics -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h2 class="text-lg font-semibold mb-4">Motion Statistics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <canvas id="motions-type-chart" width="400" height="300"></canvas>
+                    </div>
+                    <div>
+                        <canvas id="motions-result-chart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Voting View -->
+        <section id="voting-view" class="view-section hidden">
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold mb-4 md:mb-0">Voting Management</h2>
+                    <div class="flex gap-3">
+                        <button id="create-vote-btn" class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-plus"></i>
+                            <span>Start New Vote</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="space-y-6" id="votes-list">
+                    <!-- Voting data will be added dynamically via JavaScript -->
+                    <div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-check-square-o text-4xl text-gray-300 mb-3"></i>
+                        <p>No voting records</p>
+                        <p class="text-sm text-gray-400 mt-1">Click "Start New Vote" to create a vote</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Vote Panel (hidden by default) -->
+            <div id="current-vote-panel" class="bg-white rounded-xl p-6 card-shadow hidden animate-fade-in">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-xl font-semibold">Current Vote</h2>
+                    <button id="close-vote-panel" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                
+                <div id="vote-details" class="mb-6">
+                    <h3 id="vote-title" class="text-lg font-medium mb-2">Vote Title</h3>
+                    <p id="vote-description" class="text-gray-600 mb-4">Vote description content</p>
+                    
+                    <!-- Voting Method Selection -->
+                    <div class="mb-6 p-4 bg-neutral rounded-lg">
+                        <h4 class="font-medium mb-3">Voting Method</h4>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="voting-method" value="manual" class="mr-2" checked>
+                                <span>Manual Count Entry</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="voting-method" value="auto" class="mr-2">
+                                <span>Delegate Voting</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="voting-method" value="direct" class="mr-2">
+                                <span>Direct Result</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Voting Rules -->
+                    <div id="voting-rules-container" class="mb-6">
+                        <h4 class="font-medium mb-3">Voting Rules</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Passing Requirement</label>
+                                <select id="voting-threshold" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                    <option value="majority">Simple Majority (50% + 1)</option>
+                                    <option value="twothirds">Two-Thirds Majority</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Voting Members</label>
+                                <input type="number" id="total-voting-members" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Total number of eligible voters">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Vote Count Entry -->
+                    <div id="manual-count-container" class="mb-6">
+                        <h4 class="font-medium mb-3">Vote Counts</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 text-success">Yes Votes</label>
+                                <input type="number" id="manual-yes-count" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-success/50 focus:border-success" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 text-danger">No Votes</label>
+                                <input type="number" id="manual-no-count" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-danger/50 focus:border-danger" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1 text-warning">Abstentions</label>
+                                <input type="number" id="manual-abstain-count" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning/50 focus:border-warning" placeholder="0">
+                            </div>
+                        </div>
+                        <button id="calculate-result-btn" class="mt-3 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            Calculate Result
+                        </button>
+                    </div>
+                    
+                    <!-- Direct Result Selection -->
+                    <div id="direct-result-container" class="mb-6 hidden">
+                        <h4 class="font-medium mb-3">Vote Result</h4>
+                        <div class="flex gap-4">
+                            <button id="direct-result-pass" class="px-6 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">
+                                Pass
+                            </button>
+                            <button id="direct-result-fail" class="px-6 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                                Fail
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Delegate Voting Container -->
+                    <div id="delegate-voting-container" class="mb-6 hidden">
+                        <h4 class="font-medium mb-3">Delegate Votes</h4>
+                        <div id="delegates-votes" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto scrollbar-hide">
+                            <!-- Voting results will be added dynamically via JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Result Display -->
+                    <div id="vote-result-display" class="mb-6 p-4 rounded-lg hidden">
+                        <h4 class="font-medium mb-2">Vote Result</h4>
+                        <div class="text-xl font-bold" id="vote-result-text"></div>
+                        <div class="mt-2 text-sm text-gray-600" id="vote-result-details"></div>
+                    </div>
+                    
+                    <div class="h-64">
+                        <canvas id="vote-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <div class="mt-6 flex justify-end">
+                        <button id="end-vote-btn" class="px-6 py-2.5 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                            End Vote
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Settings View -->
+        <section id="settings-view" class="view-section hidden">
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <h2 class="text-xl font-semibold mb-6">Meeting Settings</h2>
+                
+                <form id="meeting-settings-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="meeting-committee" class="block text-sm font-medium text-gray-700 mb-1">Committee</label>
+                            <input type="text" id="meeting-committee" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="e.g. Security Council, General Assembly">
+                        </div>
+                        
+                        <div>
+                            <label for="meeting-session" class="block text-sm font-medium text-gray-700 mb-1">Session Number</label>
+                            <input type="text" id="meeting-session" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="e.g. 78th Session">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label for="meeting-topic" class="block text-sm font-medium text-gray-700 mb-1">Current Topic</label>
+                            <input type="text" id="meeting-topic" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Enter the main topic for discussion">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label for="meeting-subtopic" class="block text-sm font-medium text-gray-700 mb-1">Subtopic (Optional)</label>
+                            <input type="text" id="meeting-subtopic" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Enter any subtopic or specific focus area">
+                        </div>
+                        
+                        <div>
+                            <label for="speech-time" class="block text-sm font-medium text-gray-700 mb-1">Default Speech Time (minutes)</label>
+                            <input type="number" id="speech-time-setting" min="1" max="30" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="5">
+                        </div>
+                        
+                        <div>
+                            <label for="voting-time" class="block text-sm font-medium text-gray-700 mb-1">Default Voting Time (minutes)</label>
+                            <input type="number" id="voting-time-setting" min="1" max="30" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="10">
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-medium mb-4">Chair & Secretariat</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="chair-name" class="block text-sm font-medium text-gray-700 mb-1">Chair Name</label>
+                                <input type="text" id="chair-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Name of the committee chair">
+                            </div>
+                            
+                            <div>
+                                <label for="rapporteur-name" class="block text-sm font-medium text-gray-700 mb-1">Rapporteur Name</label>
+                                <input type="text" id="rapporteur-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Name of the rapporteur">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="button" id="reset-settings-btn" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Reset to Defaults
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            Save Settings
+                        </button>
+                    </div>
+                </form>
+<!-- 15 色主题三列文字+色块 -->
+<div class="mt-6 border-t pt-6">
+  <h3 class="text-lg font-medium mb-3">Theme Color</h3>
+  <div class="grid grid-cols-3 gap-3 text-sm">
+    <!-- 第 1 列 -->
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="red" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-red-500"></span>
+        <span>Red</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="pink" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-pink-500"></span>
+        <span>Pink</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="rose" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-rose-500"></span>
+        <span>Rose</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="fuchsia" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-fuchsia-500"></span>
+        <span>Fuchsia</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="purple" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-purple-500"></span>
+        <span>Purple</span>
+      </label>
+    </div>
+    <!-- 第 2 列 -->
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="violet" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-violet-500"></span>
+        <span>Violet</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="indigo" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-indigo-500"></span>
+        <span>Indigo</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="blue" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-blue-500"></span>
+        <span>Blue</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="sky" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-sky-500"></span>
+        <span>Sky</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="cyan" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-cyan-500"></span>
+        <span>Cyan</span>
+      </label>
+    </div>
+    <!-- 第 3 列 -->
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="teal" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-teal-500"></span>
+        <span>Teal</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="emerald" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-emerald-500"></span>
+        <span>Emerald</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="green" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-green-500"></span>
+        <span>Green</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="yellow" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-yellow-500"></span>
+        <span>Yellow</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="radio" name="theme" value="orange" class="sr-only">
+        <span class="w-4 h-4 rounded border border-gray-300 bg-orange-500"></span>
+        <span>Orange</span>
+      </label>
+    </div>
+  </div>
+</div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h2 class="text-lg font-semibold mb-4">Meeting History</h2>
+                <div class="space-y-4" id="meeting-history">
+                    <div class="text-center text-gray-500 py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-history text-4xl text-gray-300 mb-3"></i>
+                        <p>No meeting history available</p>
+                        <p class="text-sm text-gray-400 mt-1">Meeting events will be recorded here</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-container" class="bg-white rounded-xl w-full max-w-md mx-auto shadow-xl animate-fade-in overflow-hidden">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 id="modal-title" class="text-lg font-semibold">Modal Title</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="modal-content" class="p-6">
+                <!-- Modal content will be added dynamically via JavaScript -->
+            </div>
+            
+            <div class="p-6 border-t flex justify-end gap-3">
+                <button id="modal-cancel" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button id="modal-confirm" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roll Call Modal -->
+    <div id="rollcall-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div id="rollcall-container" class="bg-white rounded-xl w-full max-w-lg mx-auto shadow-xl animate-fade-in overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Roll Call</h3>
+                <button id="close-rollcall" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-8 text-center">
+                <div class="text-2xl font-bold mb-2" id="rollcall-country">Country</div>
+                <div class="text-xl text-gray-600 mb-6" id="rollcall-delegate">Delegate Name</div>
+                
+                <div class="flex justify-center gap-4 mb-6">
+                    <button id="rollcall-present" class="px-6 py-3 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">
+                        Present
+                    </button>
+                    <button id="rollcall-absent" class="px-6 py-3 bg-danger text-white rounded-lg hover:bg-danger/90 transition-colors">
+                        Absent
+                    </button>
+                </div>
+                
+                <div class="text-sm text-gray-500">
+                    <span id="rollcall-progress">1/5</span> delegates
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage - empty by default
+        const appData = {
+            delegates: [],
+            motions: [],
+            votes: [],
+            currentVote: null,
+            meetingStarted: false,
+            activityFeed: [],
+            meetingHistory: [],
+speechTimer: null,
+remainingSeconds: 0,
+speakersList: [],          // 发言人队列，存 delegate.id
+            settings: {
+                committee: '',
+                session: '',
+                topic: '',
+                subtopic: '',
+                speechTime: 5,
+                votingTime: 10,
+                chairName: '',
+                rapporteurName: ''
+            },
+            // For saving/loading
+            lastSaved: null
+        };
+
+        // DOM Elements
+        const elements = {
+            // Navigation elements
+            navButtons: {
+                home: document.getElementById('nav-home'),
+                rollcall: document.getElementById('nav-rollcall'),
+                motions: document.getElementById('nav-motions'),
+                voting: document.getElementById('nav-voting'),
+                settings: document.getElementById('nav-settings'),
+                mobileHome: document.getElementById('mobile-home'),
+                mobileRollcall: document.getElementById('mobile-rollcall'),
+                mobileMotions: document.getElementById('mobile-motions'),
+                mobileVoting: document.getElementById('mobile-voting'),
+                mobileSettings: document.getElementById('mobile-settings'),
+                mobileSave: document.getElementById('mobile-save'),
+                mobileImport: document.getElementById('mobile-import')
+            },
+            views: {
+                home: document.getElementById('home-view'),
+                rollcall: document.getElementById('rollcall-view'),
+                motions: document.getElementById('motions-view'),
+                voting: document.getElementById('voting-view'),
+                settings: document.getElementById('settings-view')
+            },
+            mobileMenu: {
+                btn: document.getElementById('mobile-menu-btn'),
+                menu: document.getElementById('mobile-menu')
+            },
+            // Save and Import buttons
+            saveButton: document.getElementById('save-meeting-btn'),
+            importButton: document.getElementById('import-meeting-btn'),
+            // Home view elements
+            home: {
+                startMeetingBtn: document.getElementById('start-meeting-btn'),
+                configureMeetingBtn: document.getElementById('configure-meeting-btn'),
+                meetingStatusBadge: document.getElementById('meeting-status-badge'),
+                currentCommittee: document.getElementById('current-committee'),
+                currentTopic: document.getElementById('current-topic'),
+                speakersCount: document.getElementById('speakers-count'),
+                currentSpeaker: document.getElementById('current-speaker'),
+                speechTime: document.getElementById('speech-time'),
+                totalDelegates: document.getElementById('total-delegates'),
+                presentCount: document.getElementById('present-count'),
+                absentCount: document.getElementById('absent-count'),
+                motionsCount: document.getElementById('motions-count'),
+                votesCount: document.getElementById('votes-count'),
+                passedMotions: document.getElementById('passed-motions'),
+                motionsProgress: document.getElementById('motions-progress'),
+                votesProgress: document.getElementById('votes-progress'),
+                passedProgress: document.getElementById('passed-progress'),
+                activityFeed: document.getElementById('activity-feed'),
+                quickRollcall: document.getElementById('quick-rollcall'),
+                quickAddMotion: document.getElementById('quick-add-motion'),
+                quickStartVote: document.getElementById('quick-start-vote'),
+                quickManageDelegates: document.getElementById('quick-manage-delegates')
+            },
+            // Roll call view elements
+            rollcall: {
+                delegateSearch: document.getElementById('delegate-search'),
+                addDelegateBtn: document.getElementById('add-delegate-btn'),
+                clearAllDelegates: document.getElementById('clear-all-delegates'),
+                delegatesTableBody: document.getElementById('delegates-table-body'),
+                tableDelegatesCount: document.getElementById('table-delegates-count'),
+                tablePresentCount: document.getElementById('table-present-count'),
+                tableAbsentCount: document.getElementById('table-absent-count'),
+                markAllPresent: document.getElementById('mark-all-present'),
+                markAllAbsent: document.getElementById('mark-all-absent'),
+                startRollcallBtn: document.getElementById('start-rollcall-btn'),
+                bulkDelegates: document.getElementById('bulk-delegates'),
+                importDelegates: document.getElementById('import-delegates')
+            },
+            // Motions view elements
+            motions: {
+                newMotionBtn: document.getElementById('new-motion-btn'),
+                clearAllMotions: document.getElementById('clear-all-motions'),
+                motionsList: document.getElementById('motions-list')
+            },
+            // Voting view elements
+            voting: {
+                createVoteBtn: document.getElementById('create-vote-btn'),
+                votesList: document.getElementById('votes-list'),
+                currentVotePanel: document.getElementById('current-vote-panel'),
+                closeVotePanel: document.getElementById('close-vote-panel'),
+                voteTitle: document.getElementById('vote-title'),
+                voteDescription: document.getElementById('vote-description'),
+                voteResultText: document.getElementById('vote-result-text'),
+                voteResultDetails: document.getElementById('vote-result-details'),
+                voteResultDisplay: document.getElementById('vote-result-display'),
+                votingThreshold: document.getElementById('voting-threshold'),
+                totalVotingMembers: document.getElementById('total-voting-members'),
+                manualYesCount: document.getElementById('manual-yes-count'),
+                manualNoCount: document.getElementById('manual-no-count'),
+                manualAbstainCount: document.getElementById('manual-abstain-count'),
+                calculateResultBtn: document.getElementById('calculate-result-btn'),
+                directResultPass: document.getElementById('direct-result-pass'),
+                directResultFail: document.getElementById('direct-result-fail'),
+                delegatesVotes: document.getElementById('delegates-votes'),
+                endVoteBtn: document.getElementById('end-vote-btn'),
+                votingMethodRadios: document.querySelectorAll('input[name="voting-method"]'),
+                votingRulesContainer: document.getElementById('voting-rules-container'),
+                manualCountContainer: document.getElementById('manual-count-container'),
+                directResultContainer: document.getElementById('direct-result-container'),
+                delegateVotingContainer: document.getElementById('delegate-voting-container')
+            },
+            // Settings view elements
+            settings: {
+                form: document.getElementById('meeting-settings-form'),
+                committee: document.getElementById('meeting-committee'),
+                session: document.getElementById('meeting-session'),
+                topic: document.getElementById('meeting-topic'),
+                subtopic: document.getElementById('meeting-subtopic'),
+                speechTime: document.getElementById('speech-time-setting'),
+                votingTime: document.getElementById('voting-time-setting'),
+                chairName: document.getElementById('chair-name'),
+                rapporteurName: document.getElementById('rapporteur-name'),
+                resetBtn: document.getElementById('reset-settings-btn'),
+                meetingHistory: document.getElementById('meeting-history')
+            },
+            // Modal elements
+            modal: {
+                overlay: document.getElementById('modal-overlay'),
+                container: document.getElementById('modal-container'),
+                title: document.getElementById('modal-title'),
+                content: document.getElementById('modal-content'),
+                cancel: document.getElementById('modal-cancel'),
+                confirm: document.getElementById('modal-confirm'),
+                close: document.getElementById('close-modal')
+            },
+            // Roll call modal elements
+            rollcallModal: {
+                container: document.getElementById('rollcall-container'),
+                country: document.getElementById('rollcall-country'),
+                delegate: document.getElementById('rollcall-delegate'),
+                present: document.getElementById('rollcall-present'),
+                absent: document.getElementById('rollcall-absent'),
+                progress: document.getElementById('rollcall-progress'),
+                close: document.getElementById('close-rollcall')
+            }
+        };
+
+        // Chart objects
+        let charts = {
+            attendance: null,
+            motionsType: null,
+            motionsResult: null,
+            vote: null
+        };
+/* ===== 倒计时函数 ===== */
+function startSpeechTimer() {
+  const total = appData.settings.speechTime * 60;
+  appData.remainingSeconds = total;
+  updateSpeechTimerDisplay();
+  appData.speechTimer = setInterval(() => {
+    appData.remainingSeconds--;
+    updateSpeechTimerDisplay();
+    if (appData.remainingSeconds <= 0) {
+      clearInterval(appData.speechTimer);
+      alert("Time's up!");
+    }
+  }, 1000);
+}
+function stopSpeechTimer() {
+  clearInterval(appData.speechTimer);
+  appData.speechTimer = null;
+}
+function updateSpeechTimerDisplay() {
+  const m = Math.floor(appData.remainingSeconds / 60);
+  const s = appData.remainingSeconds % 60;
+  const str = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  elements.home.speechTime.textContent = str;
+}
+/* ===== 倒计时函数结束 ===== */
+/* ===== Speaker List 函数 ===== */
+function toggleSpeaker(delegateId) {
+  const idx = appData.speakersList.indexOf(delegateId);
+  if (idx === -1) appData.speakersList.push(delegateId);
+  else appData.speakersList.splice(idx, 1);
+  updateSpeakersDisplay();
+rebuildSpeakerDropdown();
+}
+function updateSpeakersDisplay() {
+  const total = appData.speakersList.length;
+  elements.home.speakersCount.textContent = total;
+  elements.home.speakersTotal.textContent = appData.delegates.filter(d => d.present).length;
+}
+/* === 下拉框相关 === */
+function rebuildSpeakerDropdown() {
+  const sel = document.getElementById('current-speaker-select');
+  sel.innerHTML = '<option value="">-- Select --</option>';   // 清空
+  appData.delegates.filter(d => d.present).forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.id;
+    opt.textContent = `${d.country} - ${d.name}`;
+    if (appData.speakersList.length && appData.speakersList[0] === d.id) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function onDropdownChange() {
+  const sel = document.getElementById('current-speaker-select');
+  const newSpeakerId = sel.value;
+  if (!newSpeakerId) {
+    appData.speakersList = [];
+  } else {
+    appData.speakersList = [newSpeakerId, ...appData.speakersList.filter(id => id !== newSpeakerId)];
+  }
+  updateSpeakersDisplay();
+}
+
+/* 页面加载完就监听 */
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('current-speaker-select');
+  sel.addEventListener('change', onDropdownChange);
+});
+function clearAllSpeakers() {
+  appData.speakersList = [];
+  updateSpeakersDisplay();
+}
+/* ===== Speaker List 函数结束 ===== */
+        // Initialize charts
+        function initCharts() {
+            // Attendance chart
+            const attendanceCtx = document.getElementById('attendance-chart').getContext('2d');
+            charts.attendance = new Chart(attendanceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#4CAF50', '#B71C1C'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Motion types chart
+            const motionsTypeCtx = document.getElementById('motions-type-chart').getContext('2d');
+            charts.motionsType = new Chart(motionsTypeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Procedural', 'Substantive', 'Amendments', 'Other'],
+                    datasets: [{
+                        label: 'Number of Motions',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: '#556B2F',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Motion results chart
+            const motionsResultCtx = document.getElementById('motions-result-chart').getContext('2d');
+            charts.motionsResult = new Chart(motionsResultCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Passed', 'Failed', 'Pending'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#4CAF50', '#B71C1C', '#FF8F00'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Switch views
+        function switchView(viewName) {
+if (appData.meetingStarted && appData.remainingSeconds > 0) {
+  updateSpeechTimerDisplay();
+}
+            // Hide all views
+            Object.values(elements.views).forEach(view => {
+                view.classList.add('hidden');
+            });
+            
+            // Show selected view
+            elements.views[viewName].classList.remove('hidden');
+            
+            // Update navigation button states
+            Object.values(elements.navButtons).forEach(btn => {
+                if (btn && btn.classList) {
+                    btn.classList.remove('text-primary', 'border-b-2', 'border-primary');
+                    btn.classList.add('text-gray-600');
+                }
+            });
+            
+            // Set active navigation button style
+            if (elements.navButtons[viewName]) {
+                elements.navButtons[viewName].classList.remove('text-gray-600');
+                elements.navButtons[viewName].classList.add('text-primary', 'border-b-2', 'border-primary');
+            }
+            
+            // Close mobile menu automatically
+            elements.mobileMenu.menu.classList.add('hidden');
+            
+            // Show vote panel if in voting view and there's an active vote
+            if (viewName === 'voting' && appData.currentVote) {
+                elements.voting.currentVotePanel.classList.remove('hidden');
+                updateVoteChart();
+            } else {
+                elements.voting.currentVotePanel.classList.add('hidden');
+            }
+            
+            // Update data display when switching views
+            if (viewName === 'motions') {
+                updateMotionsCharts();
+            } else if (viewName === 'settings') {
+                loadSettingsForm();
+                updateMeetingHistory();
+            }
+        }
+
+        // Load settings into form
+        function loadSettingsForm() {
+            elements.settings.committee.value = appData.settings.committee;
+            elements.settings.session.value = appData.settings.session;
+            elements.settings.topic.value = appData.settings.topic;
+            elements.settings.subtopic.value = appData.settings.subtopic;
+            elements.settings.speechTime.value = appData.settings.speechTime;
+            elements.settings.votingTime.value = appData.settings.votingTime;
+            elements.settings.chairName.value = appData.settings.chairName;
+            elements.settings.rapporteurName.value = appData.settings.rapporteurName;
+        }
+
+        // Save meeting settings
+        function saveMeetingSettings(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const newSettings = {
+                committee: elements.settings.committee.value.trim(),
+                session: elements.settings.session.value.trim(),
+                topic: elements.settings.topic.value.trim(),
+                subtopic: elements.settings.subtopic.value.trim(),
+                speechTime: parseInt(elements.settings.speechTime.value) || 5,
+                votingTime: parseInt(elements.settings.votingTime.value) || 10,
+                chairName: elements.settings.chairName.value.trim(),
+                rapporteurName: elements.settings.rapporteurName.value.trim()
+            };
+            
+            // Update app data
+            appData.settings = newSettings;
+            if (appData.meetingStarted) {
+  stopSpeechTimer();
+  startSpeechTimer();
+}
+            // Update home page display
+            updateHomeMeetingInfo();
+            
+            // Add to activity feed
+            addToActivityFeed('Meeting settings updated');
+            
+            // Add to meeting history
+            addToMeetingHistory('Meeting settings updated');
+            
+            // Show success message
+            showModal(
+                'Settings Saved',
+                '<p class="text-center">Your meeting settings have been successfully saved.</p>',
+                () => {}
+            );
+        }
+
+        // Reset settings to default
+        function resetSettings() {
+            showModal(
+                'Reset Settings',
+                '<p>Are you sure you want to reset all meeting settings to their default values?</p>',
+                () => {
+                    appData.settings = {
+                        committee: '',
+                        session: '',
+                        topic: '',
+                        subtopic: '',
+                        speechTime: 5,
+                        votingTime: 10,
+                        chairName: '',
+                        rapporteurName: ''
+                    };
+                    
+                    loadSettingsForm();
+                    updateHomeMeetingInfo();
+                    addToActivityFeed('Meeting settings reset to defaults');
+                    addToMeetingHistory('Meeting settings reset to defaults');
+                }
+            );
+        }
+
+        // Update home page meeting info display
+        function updateHomeMeetingInfo() {
+            elements.home.currentCommittee.textContent = appData.settings.committee || 'Not Set';
+            elements.home.currentTopic.textContent = appData.settings.topic || 'Not Set';
+            elements.home.speechTime.textContent = appData.settings.speechTime 
+                ? `${appData.settings.speechTime}:00` 
+                : '00:00';
+        }
+
+        // Add to meeting history
+        function addToMeetingHistory(event) {
+            const historyItem = {
+                id: Date.now().toString(),
+                event,
+                timestamp: new Date()
+            };
+            
+            appData.meetingHistory.unshift(historyItem);
+            
+            // Limit history items
+            if (appData.meetingHistory.length > 50) {
+                appData.meetingHistory.pop();
+            }
+            
+            updateMeetingHistory();
+        }
+
+        // Update meeting history display
+        function updateMeetingHistory() {
+            const container = elements.settings.meetingHistory;
+            
+            if (appData.meetingHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-history text-4xl text-gray-300 mb-3"></i>
+                        <p>No meeting history available</p>
+                        <p class="text-sm text-gray-400 mt-1">Meeting events will be recorded here</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            appData.meetingHistory.forEach(item => {
+                const formattedTime = new Date(item.timestamp).toLocaleString();
+                
+                const historyItem = document.createElement('div');
+                historyItem.className = 'p-3 border-b last:border-0 hover:bg-neutral/50 transition-colors';
+                historyItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <p>${item.event}</p>
+                        <span class="text-xs text-gray-500">${formattedTime}</span>
+                    </div>
+                `;
+                
+                container.appendChild(historyItem);
+            });
+        }
+
+        // Add delegate
+        function addDelegate(country, name, present = false) {
+            const delegate = {
+                id: Date.now().toString(),
+                country,
+                name,
+                present
+            };
+            
+            appData.delegates.push(delegate);
+            updateDelegatesTable();
+            updateHomeStats();
+            addToActivityFeed(`Added delegate: ${country} - ${name}`);
+rebuildSpeakerDropdown();
+            addToMeetingHistory(`Added delegate: ${country} - ${name}`);
+        }
+
+        // Update delegates table
+        function updateDelegatesTable() {
+const tbody = document.getElementById('delegates-table-body');
+            const tableBody = elements.rollcall.delegatesTableBody;
+            tableBody.innerHTML = '';
+            
+            if (appData.delegates.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            No delegate data available. Click "Add Delegate" to add.
+                        </td>
+                    </tr>
+                `;
+                elements.rollcall.tableDelegatesCount.textContent = '0';
+                elements.rollcall.tablePresentCount.textContent = '0';
+                elements.rollcall.tableAbsentCount.textContent = '0';
+                return;
+            }
+            
+            // Apply search filter
+            const searchTerm = elements.rollcall.delegateSearch.value.toLowerCase();
+            const filteredDelegates = appData.delegates.filter(delegate => 
+                delegate.country.toLowerCase().includes(searchTerm) || 
+                delegate.name.toLowerCase().includes(searchTerm)
+            );
+            
+            filteredDelegates.forEach((delegate, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-neutral/50 transition-colors';
+                
+                // Create cells
+                const numCell = document.createElement('td');
+                numCell.className = 'px-4 py-3 whitespace-nowrap';
+                numCell.textContent = index + 1;
+                
+                const countryCell = document.createElement('td');
+                countryCell.className = 'px-4 py-3 whitespace-nowrap';
+                countryCell.textContent = delegate.country;
+                
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-4 py-3 whitespace-nowrap';
+                nameCell.textContent = delegate.name;
+                
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-4 py-3 whitespace-nowrap';
+                statusCell.innerHTML = `
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${delegate.present ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}">
+                        ${delegate.present ? 'Present' : 'Absent'}
+                    </span>
+                `;
+                
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'px-4 py-3 whitespace-nowrap';
+                
+                // Create toggle button
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'text-primary hover:text-primary/80 mr-3';
+                toggleBtn.innerHTML = '<i class="fa fa-refresh"></i>';
+                toggleBtn.addEventListener('click', () => toggleDelegateStatus(delegate.id));
+                
+                // Create delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'text-danger hover:text-danger/80';
+                deleteBtn.innerHTML = '<i class="fa fa-trash"></i>';
+                deleteBtn.addEventListener('click', () => deleteDelegate(delegate.id));
+                
+                actionsCell.appendChild(toggleBtn);
+                actionsCell.appendChild(deleteBtn);
+                // Add cells to row
+                row.appendChild(numCell);
+                row.appendChild(countryCell);
+                row.appendChild(nameCell);
+                row.appendChild(statusCell);
+// === Speaker checkbox ===
+const spkCell = document.createElement('td');
+spkCell.className = 'px-4 py-3 whitespace-nowrap text-center';
+const chk = document.createElement('input');
+chk.type = 'checkbox';
+chk.checked = appData.speakersList.includes(delegate.id);
+chk.addEventListener('change', () => toggleSpeaker(delegate.id));
+spkCell.appendChild(chk);
+row.appendChild(spkCell);
+row.appendChild(actionsCell);
+tbody.appendChild(row);
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Update counts
+            const presentCount = appData.delegates.filter(d => d.present).length;
+            elements.rollcall.tableDelegatesCount.textContent = appData.delegates.length;
+            elements.rollcall.tablePresentCount.textContent = presentCount;
+            elements.rollcall.tableAbsentCount.textContent = appData.delegates.length - presentCount;
+        }
+
+        // Toggle delegate attendance status
+        function toggleDelegateStatus(id) {
+            const delegate = appData.delegates.find(d => d.id === id);
+            if (delegate) {
+                delegate.present = !delegate.present;
+                updateDelegatesTable();
+                updateHomeStats();
+                addToActivityFeed(`${delegate.country} - ${delegate.name} marked as ${delegate.present ? 'present' : 'absent'}`);
+            }
+        }
+
+        // Delete delegate
+        function deleteDelegate(id) {
+            const delegate = appData.delegates.find(d => d.id === id);
+            if (delegate) {
+                if (confirm(`Are you sure you want to delete delegate ${delegate.country} - ${delegate.name}?`)) {
+                    appData.delegates = appData.delegates.filter(d => d.id !== id);
+                    updateDelegatesTable();
+                    updateHomeStats();
+                    addToActivityFeed(`Deleted delegate: ${delegate.country} - ${delegate.name}`);
+                    addToMeetingHistory(`Deleted delegate: ${delegate.country} - ${delegate.name}`);
+                }
+            }
+        }
+
+        // Clear all delegates
+        function clearAllDelegates() {
+            if (appData.delegates.length === 0) {
+                alert('There are no delegates to clear');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to delete all ${appData.delegates.length} delegates? This action cannot be undone.`)) {
+                const count = appData.delegates.length;
+                appData.delegates = [];
+                updateDelegatesTable();
+                updateHomeStats();
+                addToActivityFeed(`Cleared all ${count} delegates`);
+                addToMeetingHistory(`Cleared all ${count} delegates`);
+            }
+        }
+
+        // Clear all motions
+        function clearAllMotions() {
+            if (appData.motions.length === 0) {
+                alert('There are no motions to clear');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to delete all ${appData.motions.length} motions? This action cannot be undone.`)) {
+                const count = appData.motions.length;
+                appData.motions = [];
+                updateMotionsList();
+                updateHomeStats();
+                updateMotionsCharts();
+                addToActivityFeed(`Cleared all ${count} motions`);
+                addToMeetingHistory(`Cleared all ${count} motions`);
+            }
+        }
+
+        // Update home page statistics
+        function updateHomeStats() {
+            const total = appData.delegates.length;
+            const present = appData.delegates.filter(d => d.present).length;
+            const absent = total - present;
+            
+            // Update attendance statistics
+            elements.home.totalDelegates.textContent = total;
+            elements.home.presentCount.textContent = present;
+            elements.home.absentCount.textContent = absent;
+            
+            // Update chart
+            charts.attendance.data.datasets[0].data = [present, absent];
+            charts.attendance.update();
+            
+            // Update motion and voting statistics
+            elements.home.motionsCount.textContent = appData.motions.length;
+            elements.home.votesCount.textContent = appData.votes.length;
+            
+            const passed = appData.motions.filter(m => m.status === 'passed').length;
+            elements.home.passedMotions.textContent = passed;
+            
+            // Update progress bars
+            elements.home.motionsProgress.style.width = appData.motions.length > 0 ? `${Math.min(100, appData.motions.length * 10)}%` : '0%';
+            elements.home.votesProgress.style.width = appData.votes.length > 0 ? `${Math.min(100, appData.votes.length * 10)}%` : '0%';
+            elements.home.passedProgress.style.width = appData.motions.length > 0 ? `${Math.round((passed / appData.motions.length) * 100)}%` : '0%';
+        }
+
+        // Add motion
+        function addMotion(title, type, description) {
+            const motion = {
+                id: Date.now().toString(),
+                title,
+                type,
+                description,
+                status: 'pending', // pending, passed, failed
+                createdAt: new Date(),
+                voteResult: null
+            };
+            
+            appData.motions.push(motion);
+            updateMotionsList();
+            updateHomeStats();
+            updateMotionsCharts();
+            addToActivityFeed(`Proposed new motion: ${title}`);
+            addToMeetingHistory(`Proposed new motion: ${title}`);
+        }
+
+        // Update motions list
+        function updateMotionsList() {
+            const motionsList = elements.motions.motionsList;
+            motionsList.innerHTML = '';
+            
+            if (appData.motions.length === 0) {
+                motionsList.innerHTML = `
+                    <div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-gavel text-4xl text-gray-300 mb-3"></i>
+                        <p>No motion records</p>
+                        <p class="text-sm text-gray-400 mt-1">Click "Propose New Motion" to add meeting motions</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by creation time (newest first)
+            const sortedMotions = [...appData.motions].sort((a, b) => b.createdAt - a.createdAt);
+            
+            sortedMotions.forEach(motion => {
+                const motionCard = document.createElement('div');
+                motionCard.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+                
+                let statusBadge = '';
+                switch(motion.status) {
+                    case 'passed':
+                        statusBadge = '<span class="px-2 py-1 bg-success/10 text-success rounded-full text-xs font-medium">Passed</span>';
+                        break;
+                    case 'failed':
+                        statusBadge = '<span class="px-2 py-1 bg-danger/10 text-danger rounded-full text-xs font-medium">Failed</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="px-2 py-1 bg-warning/10 text-warning rounded-full text-xs font-medium">Pending</span>';
+                }
+                
+                let typeBadge = '';
+                switch(motion.type) {
+                    case 'procedural':
+                        typeBadge = '<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">Procedural</span>';
+                        break;
+                    case 'substantive':
+                        typeBadge = '<span class="px-2 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium">Substantive</span>';
+                        break;
+                    case 'amendment':
+                        typeBadge = '<span class="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-xs font-medium">Amendment</span>';
+                        break;
+                    default:
+                        typeBadge = '<span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Other</span>';
+                }
+                
+                let voteResultHtml = '';
+                if (motion.voteResult) {
+                    voteResultHtml = `
+                        <div class="mt-3 pt-3 border-t text-sm">
+                            <div class="font-medium mb-1">Vote Result:</div>
+                            <div class="flex space-x-4">
+                                <div><span class="text-success">Yes: ${motion.voteResult.yes}</span></div>
+                                <div><span class="text-danger">No: ${motion.voteResult.no}</span></div>
+                                <div><span class="text-warning">Abstain: ${motion.voteResult.abstain}</span></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                let actionButtonContainer = document.createElement('div');
+                actionButtonContainer.className = 'flex justify-end';
+                
+                if (motion.status === 'pending') {
+                    const actionButton = document.createElement('button');
+                    actionButton.className = 'text-primary hover:text-primary/80';
+                    actionButton.innerHTML = '<i class="fa fa-check-square-o mr-1"></i> Start Vote';
+                    actionButton.addEventListener('click', () => startVoteForMotion(motion.id));
+                    actionButtonContainer.appendChild(actionButton);
+                }
+                
+                const formattedDate = new Date(motion.createdAt).toLocaleString();
+                
+                motionCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium">${motion.title}</h3>
+                        ${statusBadge}
+                    </div>
+                    <div class="flex space-x-2 mb-3">
+                        ${typeBadge}
+                        <span class="text-xs text-gray-500">${formattedDate}</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-3">${motion.description}</p>
+                    ${voteResultHtml}
+                `;
+                
+                motionCard.appendChild(actionButtonContainer);
+                motionsList.appendChild(motionCard);
+            });
+        }
+
+        // Update motion charts
+        function updateMotionsCharts() {
+            // Count motion types
+            const typeCounts = {
+                procedural: 0,
+                substantive: 0,
+                amendment: 0,
+                other: 0
+            };
+            
+            // Count motion results
+            const resultCounts = {
+                passed: 0,
+                failed: 0,
+                pending: 0
+            };
+            
+            appData.motions.forEach(motion => {
+                // Update type counts
+                if (typeCounts.hasOwnProperty(motion.type)) {
+                    typeCounts[motion.type]++;
+                } else {
+                    typeCounts.other++;
+                }
+                
+                // Update result counts
+                resultCounts[motion.status]++;
+            });
+            
+            // Update type chart
+            charts.motionsType.data.datasets[0].data = [
+                typeCounts.procedural,
+                typeCounts.substantive,
+                typeCounts.amendment,
+                typeCounts.other
+            ];
+            charts.motionsType.update();
+            
+            // Update result chart
+            charts.motionsResult.data.datasets[0].data = [
+                resultCounts.passed,
+                resultCounts.failed,
+                resultCounts.pending
+            ];
+            charts.motionsResult.update();
+        }
+
+        // Start vote for a motion
+        function startVoteForMotion(motionId) {
+            const motion = appData.motions.find(m => m.id === motionId);
+            if (!motion || motion.status !== 'pending') return;
+            
+            // Get total present delegates as default voting members
+            const totalVotingMembers = appData.delegates.filter(d => d.present).length;
+            
+            // Create vote
+            const vote = {
+                id: Date.now().toString(),
+                title: `Vote on "${motion.title}"`,
+                description: `Voting on motion: ${motion.title}`,
+                motionId: motionId,
+                status: 'active', // active, completed
+                threshold: 'majority', // majority or twothirds
+                totalVotingMembers: totalVotingMembers,
+                yes: 0,
+                no: 0,
+                abstain: 0,
+                passed: null, // null = not decided yet
+                votes: {}, // Store delegate votes: {delegateId: 'yes'|'no'|'abstain'}
+                startedAt: new Date()
+            };
+            
+            appData.votes.push(vote);
+            appData.currentVote = vote;
+            
+            // Switch to voting view and show current vote panel
+            switchView('voting');
+            elements.voting.currentVotePanel.classList.remove('hidden');
+            
+            // Update vote details
+            updateCurrentVoteDisplay();
+            
+            addToActivityFeed(`Started voting on motion "${motion.title}"`);
+            addToMeetingHistory(`Started voting on motion "${motion.title}"`);
+        }
+
+        // Create new independent vote
+        function createNewVote(title, description) {
+            // Get total present delegates as default voting members
+            const totalVotingMembers = appData.delegates.filter(d => d.present).length;
+            
+            const vote = {
+                id: Date.now().toString(),
+                title,
+                description,
+                motionId: null,
+                status: 'active', // active, completed
+                threshold: 'majority', // majority or twothirds
+                totalVotingMembers: totalVotingMembers,
+                yes: 0,
+                no: 0,
+                abstain: 0,
+                passed: null, // null = not decided yet
+                votes: {}, // Store delegate votes: {delegateId: 'yes'|'no'|'abstain'}
+                startedAt: new Date()
+            };
+            
+            appData.votes.push(vote);
+            appData.currentVote = vote;
+            
+            // Switch to voting view and show current vote panel
+            switchView('voting');
+            elements.voting.currentVotePanel.classList.remove('hidden');
+            
+            // Update vote details
+            updateCurrentVoteDisplay();
+            
+            addToActivityFeed(`Started new vote: ${title}`);
+            addToMeetingHistory(`Started new vote: ${title}`);
+        }
+
+        // Update current vote display
+        function updateCurrentVoteDisplay() {
+            if (!appData.currentVote) return;
+            
+            const vote = appData.currentVote;
+            
+            // Update vote title and description
+            elements.voting.voteTitle.textContent = vote.title;
+            elements.voting.voteDescription.textContent = vote.description;
+            
+            // Update voting rules
+            elements.voting.votingThreshold.value = vote.threshold;
+            elements.voting.totalVotingMembers.value = vote.totalVotingMembers || '';
+            
+            // Update manual vote counts
+            elements.voting.manualYesCount.value = vote.yes;
+            elements.voting.manualNoCount.value = vote.no;
+            elements.voting.manualAbstainCount.value = vote.abstain;
+            
+            // Update result display if available
+            if (vote.passed !== null) {
+                elements.voting.voteResultDisplay.classList.remove('hidden');
+                elements.voting.voteResultText.textContent = vote.passed ? 'MOTION PASSED' : 'MOTION FAILED';
+                elements.voting.voteResultText.className = `text-xl font-bold ${vote.passed ? 'text-success' : 'text-danger'}`;
+                
+                let thresholdText = vote.threshold === 'majority' ? 'simple majority (50% + 1)' : 'two-thirds majority';
+                elements.voting.voteResultDetails.textContent = `Required: ${thresholdText} of ${vote.totalVotingMembers || 0} voting members`;
+            } else {
+                elements.voting.voteResultDisplay.classList.add('hidden');
+            }
+            
+            // Update delegate vote display
+            updateDelegatesVotesDisplay();
+            
+            // Update vote chart
+            updateVoteChart();
+            
+            // Update votes list
+            updateVotesList();
+        }
+
+        // Update delegate votes display
+        function updateDelegatesVotesDisplay() {
+            if (!appData.currentVote) return;
+            
+            const vote = appData.currentVote;
+            const container = elements.voting.delegatesVotes;
+            container.innerHTML = '';
+            
+            appData.delegates.forEach(delegate => {
+                if (!delegate.present) return; // Only show present delegates
+                
+                const voteItem = document.createElement('div');
+                voteItem.className = 'flex justify-between items-center p-2 border rounded bg-neutral';
+                
+                const voteValue = vote.votes[delegate.id] || 'pending';
+                
+                let voteBadge = '';
+                let voteText = 'Not Voted';
+                
+                if (voteValue === 'yes') {
+                    voteBadge = '<span class="px-2 py-0.5 bg-success/10 text-success rounded text-xs">Yes</span>';
+                    voteText = 'Voted';
+                } else if (voteValue === 'no') {
+                    voteBadge = '<span class="px-2 py-0.5 bg-danger/10 text-danger rounded text-xs">No</span>';
+                    voteText = 'Voted';
+                } else if (voteValue === 'abstain') {
+                    voteBadge = '<span class="px-2 py-0.5 bg-warning/10 text-warning rounded text-xs">Abstain</span>';
+                    voteText = 'Voted';
+                }
+                
+                const voteTextContainer = document.createElement('div');
+                voteTextContainer.className = 'flex items-center space-x-2';
+                voteTextContainer.innerHTML = voteBadge;
+                
+                const voteButton = document.createElement('button');
+                voteButton.className = 'text-xs text-primary hover:underline';
+                voteButton.textContent = voteText;
+                voteButton.addEventListener('click', () => castDelegateVote(delegate.id));
+                
+                voteTextContainer.appendChild(voteButton);
+                
+                const countryName = document.createElement('div');
+                countryName.className = 'text-sm';
+                countryName.textContent = `${delegate.country} - ${delegate.name}`;
+                
+                voteItem.appendChild(countryName);
+                voteItem.appendChild(voteTextContainer);
+                
+                container.appendChild(voteItem);
+            });
+        }
+
+        // Update vote chart
+        function updateVoteChart() {
+            if (!appData.currentVote) return;
+            
+            const vote = appData.currentVote;
+            
+            if (charts.vote) {
+                charts.vote.destroy();
+            }
+            
+            const voteCtx = document.getElementById('vote-chart').getContext('2d');
+            charts.vote = new Chart(voteCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Yes', 'No', 'Abstain'],
+                    datasets: [{
+                        data: [vote.yes, vote.no, vote.abstain],
+                        backgroundColor: ['#4CAF50', '#B71C1C', '#FF8F00'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Calculate vote result based on current settings
+        function calculateVoteResult() {
+            if (!appData.currentVote) return;
+            
+            const vote = appData.currentVote;
+            
+            // Get values from form
+            const threshold = elements.voting.votingThreshold.value;
+            const totalVotingMembers = parseInt(elements.voting.totalVotingMembers.value) || 0;
+            const yes = parseInt(elements.voting.manualYesCount.value) || 0;
+            const no = parseInt(elements.voting.manualNoCount.value) || 0;
+            const abstain = parseInt(elements.voting.manualAbstainCount.value) || 0;
+            
+            // Validate total voting members
+            if (totalVotingMembers <= 0) {
+                alert('Please enter the total number of voting members');
+                return;
+            }
+            
+            // Validate vote counts
+            if (yes + no + abstain > totalVotingMembers) {
+                alert('The sum of yes, no and abstain votes cannot exceed the total number of voting members');
+                return;
+            }
+            
+            // Update vote data
+            vote.threshold = threshold;
+            vote.totalVotingMembers = totalVotingMembers;
+            vote.yes = yes;
+            vote.no = no;
+            vote.abstain = abstain;
+            
+            // Calculate result based on threshold
+            let passed = false;
+            
+            if (threshold === 'majority') {
+                // Simple majority: more than 50% of total voting members
+                const required = Math.floor(totalVotingMembers / 2) + 1;
+                passed = yes >= required;
+            } else if (threshold === 'twothirds') {
+                // Two-thirds majority
+                const required = Math.ceil((totalVotingMembers * 2) / 3);
+                passed = yes >= required;
+            }
+            
+            vote.passed = passed;
+            
+            // Update display
+            updateCurrentVoteDisplay();
+        }
+
+        // Set direct vote result
+        function setDirectVoteResult(passed) {
+            if (!appData.currentVote) return;
+            
+            const vote = appData.currentVote;
+            vote.passed = passed;
+            
+            // Update display
+            updateCurrentVoteDisplay();
+        }
+
+        // Delegate casts vote
+        function castDelegateVote(delegateId) {
+            if (!appData.currentVote || appData.currentVote.status !== 'active') return;
+            
+            const delegate = appData.delegates.find(d => d.id === delegateId);
+            if (!delegate || !delegate.present) return;
+            
+            const vote = appData.currentVote;
+            const currentVote = vote.votes[delegateId];
+            
+            // Create vote options modal
+            showModal(
+                `Cast Vote - ${delegate.country}`,
+                `
+                <div class="space-y-3">
+                    <p class="text-sm text-gray-600">Please select voting option for ${delegate.country} - ${delegate.name}:</p>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-neutral transition-colors">
+                            <input type="radio" name="vote-option" value="yes" class="mr-3" ${currentVote === 'yes' ? 'checked' : ''}>
+                            <span>Yes</span>
+                        </label>
+                        <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-neutral transition-colors">
+                            <input type="radio" name="vote-option" value="no" class="mr-3" ${currentVote === 'no' ? 'checked' : ''}>
+                            <span>No</span>
+                        </label>
+                        <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-neutral transition-colors">
+                            <input type="radio" name="vote-option" value="abstain" class="mr-3" ${currentVote === 'abstain' ? 'checked' : ''}>
+                            <span>Abstain</span>
+                        </label>
+                    </div>
+                </div>
+                `,
+                () => {
+                    const selectedOption = document.querySelector('input[name="vote-option"]:checked');
+                    if (!selectedOption) return;
+                    
+                    const voteOption = selectedOption.value;
+                    
+                    // If previously voted, subtract from the count
+                    if (currentVote) {
+                        vote[currentVote]--;
+                    }
+                    
+                    // Update vote count
+                    vote[voteOption]++;
+                    vote.votes[delegateId] = voteOption;
+                    
+                    // Recalculate total voting members based on present delegates
+                    vote.totalVotingMembers = appData.delegates.filter(d => d.present).length;
+                    
+                    // Recalculate result based on current threshold
+                    if (vote.totalVotingMembers > 0) {
+                        if (vote.threshold === 'majority') {
+                            const required = Math.floor(vote.totalVotingMembers / 2) + 1;
+                            vote.passed = vote.yes >= required;
+                        } else if (vote.threshold === 'twothirds') {
+                            const required = Math.ceil((vote.totalVotingMembers * 2) / 3);
+                            vote.passed = vote.yes >= required;
+                        }
+                    }
+                    
+                    // Update display
+                    updateCurrentVoteDisplay();
+                    addToActivityFeed(`${delegate.country} - ${delegate.name} voted: ${
+                        voteOption === 'yes' ? 'Yes' : voteOption === 'no' ? 'No' : 'Abstain'
+                    }`);
+                }
+            );
+        }
+
+        // End vote
+        function endVote() {
+            if (!appData.currentVote || appData.currentVote.status !== 'active') return;
+            
+            // Ensure vote has a result
+            if (appData.currentVote.passed === null) {
+                if (!confirm('This vote does not have a result yet. Are you sure you want to end it?')) {
+                    return;
+                }
+                // Default to failed if no result
+                appData.currentVote.passed = false;
+            }
+            
+            const vote = appData.currentVote;
+            vote.status = 'completed';
+            vote.completedAt = new Date();
+            
+            // If this was a vote for a motion, update motion status
+            if (vote.motionId) {
+                const motion = appData.motions.find(m => m.id === vote.motionId);
+                if (motion) {
+                    motion.status = vote.passed ? 'passed' : 'failed';
+                    motion.voteResult = {
+                        yes: vote.yes,
+                        no: vote.no,
+                        abstain: vote.abstain,
+                        threshold: vote.threshold,
+                        totalVotingMembers: vote.totalVotingMembers
+                    };
+                    updateMotionsList();
+                    updateHomeStats();
+                    updateMotionsCharts();
+                    
+                    addToActivityFeed(`Motion "${motion.title}" ${motion.status === 'passed' ? 'passed' : 'failed'}`);
+                    addToMeetingHistory(`Motion "${motion.title}" ${motion.status === 'passed' ? 'passed' : 'failed'}`);
+                }
+            }
+            
+            // Clear current vote
+            appData.currentVote = null;
+            
+            // Hide vote panel
+            elements.voting.currentVotePanel.classList.add('hidden');
+            
+            // Update votes list
+            updateVotesList();
+            updateHomeStats();
+            
+            addToActivityFeed(`Vote "${vote.title}" has ended`);
+            addToMeetingHistory(`Vote "${vote.title}" has ended`);
+        }
+
+        // Update votes list
+        function updateVotesList() {
+            const votesList = elements.voting.votesList;
+            votesList.innerHTML = '';
+            
+            if (appData.votes.length === 0) {
+                votesList.innerHTML = `
+                    <div class="text-center text-gray-500 py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa fa-check-square-o text-4xl text-gray-300 mb-3"></i>
+                        <p>No voting records</p>
+                        <p class="text-sm text-gray-400 mt-1">Click "Start New Vote" to create a vote</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by creation time (newest first)
+            const sortedVotes = [...appData.votes].sort((a, b) => b.startedAt - a.startedAt);
+            
+            sortedVotes.forEach(vote => {
+                const voteCard = document.createElement('div');
+                voteCard.className = 'border rounded-lg p-4 hover:shadow-md transition-shadow';
+                
+                let statusBadge = '';
+                if (vote.status === 'active') {
+                    statusBadge = '<span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">In Progress</span>';
+                } else {
+                    let resultBadge = vote.passed ? 
+                        '<span class="px-2 py-1 bg-success/10 text-success rounded-full text-xs font-medium">Passed</span>' :
+                        '<span class="px-2 py-1 bg-danger/10 text-danger rounded-full text-xs font-medium">Failed</span>';
+                    statusBadge = resultBadge;
+                }
+                
+                const formattedStartDate = new Date(vote.startedAt).toLocaleString();
+                
+                let resultHtml = '';
+                if (vote.status === 'completed') {
+                    let thresholdText = vote.threshold === 'majority' ? 'simple majority' : 'two-thirds majority';
+                    
+                    resultHtml = `
+                        <div class="mt-2 pt-2 border-t text-sm">
+                            <div class="font-medium mb-1">Vote Result (${thresholdText}):</div>
+                            <div class="flex space-x-4">
+                                <div><span class="text-success">Yes: ${vote.yes}</span></div>
+                                <div><span class="text-danger">No: ${vote.no}</span></div>
+                                <div><span class="text-warning">Abstain: ${vote.abstain}</span></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const actionContainer = document.createElement('div');
+                actionContainer.className = 'flex justify-end';
+                
+                if (vote.status === 'active' && appData.currentVote && appData.currentVote.id === vote.id) {
+                    const actionButton = document.createElement('button');
+                    actionButton.className = 'text-primary hover:text-primary/80';
+                    actionButton.innerHTML = '<i class="fa fa-eye mr-1"></i> View Vote';
+                    actionButton.addEventListener('click', showCurrentVote);
+                    actionContainer.appendChild(actionButton);
+                }
+                
+                voteCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium">${vote.title}</h3>
+                        ${statusBadge}
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">${vote.description}</p>
+                    <div class="text-xs text-gray-500 mb-3">Start Time: ${formattedStartDate}</div>
+                    ${resultHtml}
+                `;
+                
+                voteCard.appendChild(actionContainer);
+                votesList.appendChild(voteCard);
+            });
+        }
+
+        // Show current vote
+        function showCurrentVote() {
+            if (appData.currentVote) {
+                elements.voting.currentVotePanel.classList.remove('hidden');
+                updateCurrentVoteDisplay();
+            }
+        }
+
+        // Start roll call process
+        let currentRollcallIndex = 0;
+        function startRollcallProcess() {
+            if (appData.delegates.length === 0) {
+                alert('Please add delegates before starting roll call');
+                return;
+            }
+            
+            currentRollcallIndex = 0;
+            showNextRollcall();
+        }
+
+        // Show next roll call
+        function showNextRollcall() {
+            if (currentRollcallIndex >= appData.delegates.length) {
+                // Roll call complete
+                elements.rollcallModal.container.classList.add('hidden');
+                addToActivityFeed('Roll call process completed');
+                addToMeetingHistory('Roll call process completed');
+                return;
+            }
+            
+            const delegate = appData.delegates[currentRollcallIndex];
+            elements.rollcallModal.country.textContent = delegate.country;
+            elements.rollcallModal.delegate.textContent = delegate.name;
+            elements.rollcallModal.progress.textContent = `${currentRollcallIndex + 1}/${appData.delegates.length}`;
+            
+            elements.rollcallModal.container.classList.remove('hidden');
+        }
+
+        // Process roll call result
+        function processRollcallResult(present) {
+            if (currentRollcallIndex < appData.delegates.length) {
+                const delegate = appData.delegates[currentRollcallIndex];
+                delegate.present = present;
+                
+                addToActivityFeed(`${delegate.country} - ${delegate.name} is ${present ? 'present' : 'absent'}`);
+                
+                currentRollcallIndex++;
+                updateDelegatesTable();
+                updateHomeStats();
+                showNextRollcall();
+            }
+        }
+
+        // Add activity to feed
+        function addToActivityFeed(message) {
+            const activity = {
+                id: Date.now().toString(),
+                message,
+                time: new Date()
+            };
+            
+            appData.activityFeed.unshift(activity); // Add to beginning
+            
+            // Limit activity count
+            if (appData.activityFeed.length > 20) {
+                appData.activityFeed.pop();
+            }
+            
+            updateActivityFeed();
+        }
+
+        // Update activity feed display
+        function updateActivityFeed() {
+            const feedContainer = elements.home.activityFeed;
+            feedContainer.innerHTML = '';
+            
+            if (appData.activityFeed.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        Meeting activities will appear here
+                    </div>
+                `;
+                return;
+            }
+            
+            appData.activityFeed.forEach(activity => {
+                const formattedTime = new Date(activity.time).toLocaleTimeString();
+                
+                const activityItem = document.createElement('div');
+                activityItem.className = 'flex justify-between items-start p-3 border-b last:border-0 hover:bg-neutral/50 transition-colors';
+                activityItem.innerHTML = `
+                    <div>
+                        <p>${activity.message}</p>
+                        <p class="text-xs text-gray-500 mt-1">${formattedTime}</p>
+                    </div>
+                    <i class="fa fa-circle text-xs text-primary mt-1"></i>
+                `;
+                
+                feedContainer.appendChild(activityItem);
+            });
+        }
+
+        // Show modal
+        function showModal(title, content, confirmCallback) {
+            elements.modal.title.textContent = title;
+            elements.modal.content.innerHTML = content;
+            elements.modal.overlay.classList.remove('hidden');
+            
+            // Store confirm callback
+            const handleConfirm = () => {
+                if (confirmCallback && typeof confirmCallback === 'function') {
+                    if (confirmCallback() !== false) {
+                        elements.modal.overlay.classList.add('hidden');
+                    }
+                } else {
+                    elements.modal.overlay.classList.add('hidden');
+                }
+                elements.modal.confirm.removeEventListener('click', handleConfirm);
+            };
+            
+            elements.modal.confirm.addEventListener('click', handleConfirm);
+            
+            // Add cancel functionality
+            const handleCancel = () => {
+                elements.modal.overlay.classList.add('hidden');
+                elements.modal.cancel.removeEventListener('click', handleCancel);
+                elements.modal.close.removeEventListener('click', handleCancel);
+            };
+            
+            elements.modal.cancel.addEventListener('click', handleCancel);
+            elements.modal.close.addEventListener('click', handleCancel);
+        }
+
+        // Handle voting method change
+        function handleVotingMethodChange() {
+            const selectedMethod = document.querySelector('input[name="voting-method"]:checked').value;
+            
+            // Hide all containers first
+            elements.voting.votingRulesContainer.classList.add('hidden');
+            elements.voting.manualCountContainer.classList.add('hidden');
+            elements.voting.directResultContainer.classList.add('hidden');
+            elements.voting.delegateVotingContainer.classList.add('hidden');
+            
+            // Show appropriate containers based on selected method
+            if (selectedMethod === 'manual') {
+                elements.voting.votingRulesContainer.classList.remove('hidden');
+                elements.voting.manualCountContainer.classList.remove('hidden');
+            } else if (selectedMethod === 'auto') {
+                elements.voting.votingRulesContainer.classList.remove('hidden');
+                elements.voting.delegateVotingContainer.classList.remove('hidden');
+            } else if (selectedMethod === 'direct') {
+                elements.voting.directResultContainer.classList.remove('hidden');
+            }
+        }
+
+        // Show add delegate modal
+        function showAddDelegateModal() {
+            showModal(
+                'Add New Delegate',
+                `
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-delegate-country" class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        <input type="text" id="new-delegate-country" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Country name">
+                    </div>
+                    <div>
+                        <label for="new-delegate-name" class="block text-sm font-medium text-gray-700 mb-1">Delegate Name</label>
+                        <input type="text" id="new-delegate-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Delegate's full name">
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="new-delegate-present" class="mr-2">
+                            <span>Mark as present</span>
+                        </label>
+                    </div>
+                </div>
+                `,
+                () => {
+                    const country = document.getElementById('new-delegate-country').value.trim();
+                    const name = document.getElementById('new-delegate-name').value.trim();
+                    const present = document.getElementById('new-delegate-present').checked;
+                    
+                    if (!country || !name) {
+                        alert('Please enter both country and delegate name');
+                        return false; // Prevent modal from closing
+                    }
+                    
+                    addDelegate(country, name, present);
+                    return true; // Allow modal to close
+                }
+            );
+        }
+
+        // Show add motion modal
+        function showAddMotionModal() {
+            showModal(
+                'Propose New Motion',
+                `
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-motion-title" class="block text-sm font-medium text-gray-700 mb-1">Motion Title</label>
+                        <input type="text" id="new-motion-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Brief title for the motion">
+                    </div>
+                    <div>
+                        <label for="new-motion-type" class="block text-sm font-medium text-gray-700 mb-1">Motion Type</label>
+                        <select id="new-motion-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                            <option value="procedural">Procedural</option>
+                            <option value="substantive">Substantive</option>
+                            <option value="amendment">Amendment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="new-motion-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="new-motion-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Detailed description of the motion"></textarea>
+                    </div>
+                </div>
+                `,
+                () => {
+                    const title = document.getElementById('new-motion-title').value.trim();
+                    const type = document.getElementById('new-motion-type').value;
+                    const description = document.getElementById('new-motion-description').value.trim();
+                    
+                    if (!title || !description) {
+                        alert('Please enter both title and description for the motion');
+                        return false; // Prevent modal from closing
+                    }
+                    
+                    addMotion(title, type, description);
+                    return true; // Allow modal to close
+                }
+            );
+        }
+
+        // Show create vote modal
+        function showCreateVoteModal() {
+            showModal(
+                'Start New Vote',
+                `
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-vote-title" class="block text-sm font-medium text-gray-700 mb-1">Vote Title</label>
+                        <input type="text" id="new-vote-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Title for this vote">
+                    </div>
+                    <div>
+                        <label for="new-vote-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="new-vote-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="Description of what is being voted on"></textarea>
+                    </div>
+                </div>
+                `,
+                () => {
+                    const title = document.getElementById('new-vote-title').value.trim();
+                    const description = document.getElementById('new-vote-description').value.trim();
+                    
+                    if (!title || !description) {
+                        alert('Please enter both title and description for the vote');
+                        return false; // Prevent modal from closing
+                    }
+                    
+                    createNewVote(title, description);
+                    return true; // Allow modal to close
+                }
+            );
+        }
+
+        // Import bulk delegates
+        function importBulkDelegates() {
+            const bulkText = elements.rollcall.bulkDelegates.value.trim();
+            if (!bulkText) {
+                alert('Please enter delegate information in the text area');
+                return;
+            }
+            
+            const lines = bulkText.split('\n');
+            let importedCount = 0;
+            
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+                
+                // Split into country and name using the first space as separator
+                const firstSpaceIndex = trimmedLine.indexOf(' ');
+                if (firstSpaceIndex <= 0) return; // Skip invalid lines
+                
+                const country = trimmedLine.substring(0, firstSpaceIndex).trim();
+                const name = trimmedLine.substring(firstSpaceIndex + 1).trim();
+                
+                if (country && name) {
+                    addDelegate(country, name, false);
+                    importedCount++;
+                }
+            });
+            
+            if (importedCount > 0) {
+                // Clear the text area after successful import
+                elements.rollcall.bulkDelegates.value = '';
+                addToActivityFeed(`Imported ${importedCount} delegates in bulk`);
+                addToMeetingHistory(`Imported ${importedCount} delegates in bulk`);
+            } else {
+                alert('No valid delegates were found in the input. Please use the format "Country DelegateName" on each line.');
+            }
+        }
+
+        // Save meeting state
+        function saveMeeting() {
+            // Create a copy of the data to save
+            const dataToSave = JSON.parse(JSON.stringify(appData));
+            
+            // Convert dates to strings for proper serialization
+            dataToSave.motions.forEach(motion => {
+                motion.createdAt = new Date(motion.createdAt).toISOString();
+            });
+            
+            dataToSave.votes.forEach(vote => {
+                vote.startedAt = new Date(vote.startedAt).toISOString();
+                if (vote.completedAt) {
+                    vote.completedAt = new Date(vote.completedAt).toISOString();
+                }
+            });
+            
+            dataToSave.meetingHistory.forEach(item => {
+                item.timestamp = new Date(item.timestamp).toISOString();
+            });
+            
+            dataToSave.activityFeed.forEach(item => {
+                item.time = new Date(item.time).toISOString();
+            });
+            
+            dataToSave.lastSaved = new Date().toISOString();
+            
+            // Save to localStorage
+            localStorage.setItem('otia-mun-data', JSON.stringify(dataToSave));
+            
+            // Create a downloadable file
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToSave, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "otia-mun-meeting-" + new Date().toISOString().split('T')[0] + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            
+            addToActivityFeed('Meeting data saved and downloaded');
+            addToMeetingHistory('Meeting data saved and downloaded');
+            
+            alert('Meeting data has been saved and downloaded successfully!');
+        }
+
+        // Import meeting state
+        function importMeeting() {
+            // Create file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.style.display = 'none';
+            
+            fileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        loadImportedData(importedData);
+                    } catch (error) {
+                        alert('Error importing file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            document.body.removeChild(fileInput);
+        }
+
+        // Load imported data
+        function loadImportedData(importedData) {
+            // Validate data format
+            if (!importedData.delegates || !importedData.motions || !importedData.votes) {
+                alert('Invalid meeting file format');
+                return;
+            }
+            
+            // Confirm if user wants to replace current data
+            if (appData.delegates.length > 0 || appData.motions.length > 0) {
+                if (!confirm('This will replace your current meeting data. Continue?')) {
+                    return;
+                }
+            }
+            
+            // Restore date objects
+            importedData.motions.forEach(motion => {
+                motion.createdAt = new Date(motion.createdAt);
+            });
+            
+            importedData.votes.forEach(vote => {
+                vote.startedAt = new Date(vote.startedAt);
+                if (vote.completedAt) {
+                    vote.completedAt = new Date(vote.completedAt);
+                }
+            });
+            
+            importedData.meetingHistory.forEach(item => {
+                item.timestamp = new Date(item.timestamp);
+            });
+            
+            importedData.activityFeed.forEach(item => {
+                item.time = new Date(item.time);
+            });
+            
+            // Update app data
+            Object.assign(appData, importedData);
+            
+            // Update UI
+            updateDelegatesTable();
+            updateMotionsList();
+            updateVotesList();
+            updateHomeStats();
+            updateHomeMeetingInfo();
+            updateMotionsCharts();
+            updateActivityFeed();
+            updateMeetingHistory();
+            
+            addToActivityFeed('Meeting data imported from file');
+            addToMeetingHistory('Meeting data imported from file');
+            
+            alert('Meeting data imported successfully!');
+        }
+
+        // Load meeting state from localStorage
+        function loadMeeting() {
+            const savedData = localStorage.getItem('otia-mun-data');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    loadImportedData(parsedData);
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                }
+            }
+        }
+
+        // Start meeting
+        function startMeeting() {
+            appData.meetingStarted = true;
+            elements.home.meetingStatusBadge.textContent = 'In Progress';
+            elements.home.meetingStatusBadge.className = 'px-3 py-1 bg-success/10 text-success rounded-full text-sm font-medium';
+            elements.home.startMeetingBtn.innerHTML = '<i class="fa fa-pause mr-2"></i> Pause Meeting';
+            elements.home.startMeetingBtn.removeEventListener('click', startMeeting);
+            elements.home.startMeetingBtn.addEventListener('click', pauseMeeting);
+            
+            addToActivityFeed('Meeting started');
+startSpeechTimer();
+            addToMeetingHistory('Meeting started');
+        }
+
+        // Pause meeting
+        function pauseMeeting() {
+            appData.meetingStarted = false;
+            elements.home.meetingStatusBadge.textContent = 'Paused';
+            elements.home.meetingStatusBadge.className = 'px-3 py-1 bg-warning/10 text-warning rounded-full text-sm font-medium';
+            elements.home.startMeetingBtn.innerHTML = '<i class="fa fa-play mr-2"></i> Resume Meeting';
+            elements.home.startMeetingBtn.removeEventListener('click', pauseMeeting);
+            elements.home.startMeetingBtn.addEventListener('click', startMeeting);
+            
+            addToActivityFeed('Meeting paused');
+stopSpeechTimer();
+            addToMeetingHistory('Meeting paused');
+        }
+
+        // Initialize the application
+        function init() {
+            // Initialize charts
+            initCharts();
+            
+            // Load any saved data
+            loadMeeting();
+            
+            // Set up navigation
+            elements.navButtons.home.addEventListener('click', () => switchView('home'));
+            elements.navButtons.rollcall.addEventListener('click', () => switchView('rollcall'));
+            elements.navButtons.motions.addEventListener('click', () => switchView('motions'));
+            elements.navButtons.voting.addEventListener('click', () => switchView('voting'));
+            elements.navButtons.settings.addEventListener('click', () => switchView('settings'));
+            
+            // Mobile navigation
+            elements.navButtons.mobileHome.addEventListener('click', () => switchView('home'));
+            elements.navButtons.mobileRollcall.addEventListener('click', () => switchView('rollcall'));
+            elements.navButtons.mobileMotions.addEventListener('click', () => switchView('motions'));
+            elements.navButtons.mobileVoting.addEventListener('click', () => switchView('voting'));
+            elements.navButtons.mobileSettings.addEventListener('click', () => switchView('settings'));
+            
+            // Mobile menu toggle
+            elements.mobileMenu.btn.addEventListener('click', () => {
+                elements.mobileMenu.menu.classList.toggle('hidden');
+            });
+            
+            // Save and Import buttons
+            elements.saveButton.addEventListener('click', saveMeeting);
+            elements.importButton.addEventListener('click', importMeeting);
+            elements.navButtons.mobileSave.addEventListener('click', saveMeeting);
+            elements.navButtons.mobileImport.addEventListener('click', importMeeting);
+            
+            // Home view buttons
+            elements.home.startMeetingBtn.addEventListener('click', startMeeting);
+            elements.home.configureMeetingBtn.addEventListener('click', () => switchView('settings'));
+            elements.home.quickRollcall.addEventListener('click', () => switchView('rollcall'));
+            elements.home.quickAddMotion.addEventListener('click', showAddMotionModal);
+            elements.home.quickStartVote.addEventListener('click', showCreateVoteModal);
+            elements.home.quickManageDelegates.addEventListener('click', () => switchView('rollcall'));
+elements.home.clearSpeakers = document.getElementById('clear-speakers-btn');
+elements.home.clearSpeakers.addEventListener('click', clearAllSpeakers);
+elements.home.clearSpeakers.addEventListener('click', clearAllSpeakers);
+elements.home.clearSpeakers = document.getElementById('clear-speakers-btn');
+            
+            // Roll call view buttons
+            elements.rollcall.addDelegateBtn.addEventListener('click', showAddDelegateModal);
+            elements.rollcall.clearAllDelegates.addEventListener('click', clearAllDelegates);
+            elements.rollcall.markAllPresent.addEventListener('click', () => {
+                appData.delegates.forEach(delegate => delegate.present = true);
+                updateDelegatesTable();
+                updateHomeStats();
+                addToActivityFeed('Marked all delegates as present');
+            });
+            elements.rollcall.markAllAbsent.addEventListener('click', () => {
+                appData.delegates.forEach(delegate => delegate.present = false);
+                updateDelegatesTable();
+                updateHomeStats();
+updateSpeakersDisplay();
+                addToActivityFeed('Marked all delegates as absent');
+            });
+            elements.rollcall.startRollcallBtn.addEventListener('click', startRollcallProcess);
+elements.rollcall.importDelegates = document.getElementById('import-delegates');
+            elements.rollcall.importDelegates.addEventListener('click', importBulkDelegates);
+            elements.rollcall.delegateSearch.addEventListener('input', updateDelegatesTable);
+            
+            // Roll call modal buttons
+            elements.rollcallModal.present.addEventListener('click', () => processRollcallResult(true));
+            elements.rollcallModal.absent.addEventListener('click', () => processRollcallResult(false));
+            elements.rollcallModal.close.addEventListener('click', () => {
+                elements.rollcallModal.container.classList.add('hidden');
+            });
+            
+            // Motions view buttons
+            elements.motions.newMotionBtn.addEventListener('click', showAddMotionModal);
+            elements.motions.clearAllMotions.addEventListener('click', clearAllMotions);
+            
+            // Voting view buttons
+            elements.voting.createVoteBtn.addEventListener('click', showCreateVoteModal);
+            elements.voting.closeVotePanel.addEventListener('click', () => {
+                elements.voting.currentVotePanel.classList.add('hidden');
+            });
+            elements.voting.calculateResultBtn.addEventListener('click', calculateVoteResult);
+            elements.voting.directResultPass.addEventListener('click', () => setDirectVoteResult(true));
+            elements.voting.directResultFail.addEventListener('click', () => setDirectVoteResult(false));
+            elements.voting.endVoteBtn.addEventListener('click', endVote);
+            
+            // Voting method change handlers
+            elements.voting.votingMethodRadios.forEach(radio => {
+                radio.addEventListener('change', handleVotingMethodChange);
+            });
+            
+            // Settings view
+            elements.settings.form.addEventListener('submit', saveMeetingSettings);
+            elements.settings.resetBtn.addEventListener('click', resetSettings);
+            
+            // Modal buttons
+            elements.modal.close.addEventListener('click', () => {
+                elements.modal.overlay.classList.add('hidden');
+            });
+            elements.modal.cancel.addEventListener('click', () => {
+                elements.modal.overlay.classList.add('hidden');
+            });
+            
+            // Initialize view
+            switchView('home');
+        // 深色模式
+const html = document.documentElement;
+const toggle = document.getElementById('dark-toggle');
+toggle.addEventListener('click', () => {
+  html.classList.toggle('dark');
+  const isDark = html.classList.contains('dark');
+  toggle.innerHTML = isDark ? '<i class="fa fa-sun-o"></i>' : '<i class="fa fa-moon-o"></i>';
+  localStorage.setItem('dark', isDark);
+});
+if (localStorage.getItem('dark') === 'true') html.classList.add('dark');}
+
+        // Start the application when DOM is loaded
+/* === 15 色主题下拉 === */
+const themeColors = {
+  red:    { bg: '#fee2e2', otia: '#dc2626' },
+  pink:   { bg: '#fce7f3', otia: '#ec4899' },
+  rose:   { bg: '#ffe4e6', otia: '#f43f5e' },
+  fuchsia:{ bg: '#fae8ff', otia: '#d946ef' },
+  purple: { bg: '#f3e8ff', otia: '#a855f7' },
+  violet: { bg: '#ede9fe', otia: '#8b5cf6' },
+  indigo: { bg: '#e0e7ff', otia: '#6366f1' },
+  blue:   { bg: '#dbeafe', otia: '#2563eb' },
+  sky:    { bg: '#e0f2fe', otia: '#0ea5e9' },
+  cyan:   { bg: '#cffafe', otia: '#06b6d4' },
+  teal:   { bg: '#ccfbf1', otia: '#14b8a6' },
+  emerald:{ bg: '#d1fae5', otia: '#10b981' },
+  green:  { bg: '#dcfce7', otia: '#16a34a' },
+  yellow: { bg: '#fef9c3', otia: '#ca8a04' },
+  orange: { bg: '#fff7ed', otia: '#ea580c' }
+};
+
+function applyTheme(name) {
+  document.documentElement.style.setProperty('--theme-bg', themeColors[name].bg);
+  document.documentElement.style.setProperty('--theme-otia', themeColors[name].otia);
+  localStorage.setItem('otia-theme', name);
+}
+
+// 单选按钮点击切换主题
+document.querySelectorAll('input[name="theme"]').forEach(radio => {
+  radio.addEventListener('click', e => applyTheme(e.target.value));
+});
+
+// 载入上次选中
+const savedTheme = localStorage.getItem('otia-theme');
+if (savedTheme && themeColors[savedTheme]) {
+  applyTheme(savedTheme);
+  // 勾选上次保存的颜色
+document.querySelector(`input[name="theme"][value="${savedTheme}"]`).checked = true;
+} else {
+  applyTheme('green');
+  document.getElementById('theme-selector').value = 'green';
+}
+        document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => rebuildSpeakerDropdown());
+    </script>
+</body>
+</html>
